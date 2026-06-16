@@ -6,6 +6,7 @@ import PortfolioGrid from "./components/PortfolioGrid";
 import Footer from "./components/Footer";
 import ScrollReveal from "./components/ScrollReveal";
 import StarfieldBackground from "./components/StarfieldBackground";
+import WalkieTalkieIntro from "./components/WalkieTalkieIntro";
 import { ArrowUp } from "lucide-react";
 
 interface FollowerBubble {
@@ -23,10 +24,39 @@ interface DynamicRipple {
 }
 
 export default function App() {
+  const [introConnected, setIntroConnected] = useState(false);
   const [mousePos, setMousePos] = useState({ x: -200, y: -200 });
   const [isMouseActive, setIsMouseActive] = useState(false);
   const [clickRipples, setClickRipples] = useState<DynamicRipple[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Retro typewriter connected logger notifier system
+  const [showSystemLog, setShowSystemLog] = useState(false);
+  const [typedMessage, setTypedMessage] = useState("");
+
+  useEffect(() => {
+    if (introConnected) {
+      setShowSystemLog(true);
+      const fullText = "SYS_LOG: User 'JiYoon_Hong' connected to channel CH-0724... [ONLINE/SECURE]";
+      let currentIndex = 0;
+      setTypedMessage("");
+      
+      const interval = setInterval(() => {
+        if (currentIndex < fullText.length) {
+          setTypedMessage((prev) => prev + fullText.charAt(currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(interval);
+          // Auto-fade out retro system notification alert box
+          setTimeout(() => {
+            setShowSystemLog(false);
+          }, 3800);
+        }
+      }, 48);
+
+      return () => clearInterval(interval);
+    }
+  }, [introConnected]);
 
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
@@ -104,8 +134,19 @@ export default function App() {
     { size: 40, delay: "duration-100", color: "from-sky-300/30 to-blue-400/20", offsetX: -20, offsetY: -20 },
   ];
 
+  if (!introConnected) {
+    return (
+      <div id="app-root-shell" className="min-h-screen bg-slate-950 flex flex-col font-sans select-none antialiased relative justify-center items-center overflow-hidden">
+        <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden opacity-40">
+          <StarfieldBackground />
+        </div>
+        <WalkieTalkieIntro onEnter={() => setIntroConnected(true)} />
+      </div>
+    );
+  }
+
   return (
-    <div id="app-root-shell" className="min-h-screen flex flex-col font-sans select-none antialiased relative">
+    <div id="app-root-shell" className="min-h-screen flex flex-col font-sans select-none antialiased relative animate-[fadeIn_0.8s_ease-out_forwards]">
       
       {/* Global Ambient Starfield Background (Deep Space layer) */}
       <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden opacity-80">
@@ -169,6 +210,20 @@ export default function App() {
 
       {/* Section 4: Footer contact / networking channels */}
       <Footer />
+
+      {/* 8-Bit Ticker / System Connection Log Message Notification */}
+      {showSystemLog && (
+        <div 
+          id="connection-sys-log"
+          className="fixed bottom-6 left-6 z-50 bg-slate-905 border-4 border-emerald-500 p-4 font-mono text-xs text-emerald-400 pixel-shadow select-none max-w-xs sm:max-w-md"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-emerald-400 animate-ping rounded-none shrink-0" />
+            <span className="tracking-tight">{typedMessage}</span>
+            <span className="w-1.5 h-3.5 bg-emerald-400 animate-pulse inline-block" />
+          </div>
+        </div>
+      )}
 
       {/* 5. Scroll to Top Floating Button */}
       {showScrollTop && (

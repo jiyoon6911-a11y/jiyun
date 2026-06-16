@@ -56,11 +56,11 @@ export default function Skills() {
       <div className="max-w-7xl mx-auto px-6">
         {/* Section Header */}
         <div className="max-w-2xl mb-16">
-          <span className="text-xs font-mono tracking-widest text-blue-600 block mb-2 font-bold uppercase">
+          <span className="text-xs font-mono tracking-widest text-emerald-600 block mb-2 font-bold uppercase">
             SKILLSET MATRIX
           </span>
           <h2 id="skills-section-title" className="font-display font-bold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-            보유 역량 및 평가 지표
+            보유 스킬
           </h2>
           <p className="text-sm text-slate-500 mt-2 leading-relaxed">
             영상 편집, 그래픽 디자인, 기획 전략 수립, 협업 마인드 및 최신 AI 기획 툴 숙련도 기준입니다.

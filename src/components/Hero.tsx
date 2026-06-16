@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ArrowDown, Mail, Phone, Instagram, BookOpen, Sparkles, Sliders, CheckCircle2, Ticket, Music } from "lucide-react";
+import { ArrowDown, BookOpen, Sparkles, Sliders, CheckCircle2, Ticket, Music } from "lucide-react";
 import { PROFILE, EXPERIENCES, AWARDS } from "../data";
-import FestivalMixer from "./FestivalMixer";
 
 interface HeroProps {
   onLearnMore: () => void;
@@ -30,18 +29,21 @@ export default function Hero({ onLearnMore }: HeroProps) {
 
   // Generate background active bubbles on startup
   useEffect(() => {
+    const BUBBLE_STYLES = [
+      "bg-blue-500/10 border-blue-400/40 text-blue-500 hover:bg-blue-500/20 hover:border-blue-500",
+      "bg-cyan-500/10 border-cyan-400/40 text-cyan-500 hover:bg-cyan-500/20 hover:border-cyan-500",
+      "bg-indigo-500/15 border-indigo-400/40 text-indigo-500 hover:bg-indigo-500/20 hover:border-indigo-500",
+      "bg-emerald-500/10 border-emerald-400/40 text-emerald-500 hover:bg-emerald-500/20 hover:border-emerald-500",
+    ];
+
     const initialParticles = Array.from({ length: 18 }).map((_, i) => ({
       id: i,
       x: Math.random() * 90 + 5, // percentage
       y: Math.random() * 80 + 10,
-      size: Math.random() * 20 + 24, // 24px to 44px
-      speedY: Math.random() * 0.35 + 0.15,
-      color: [
-        "bg-blue-500/10 border-blue-400/40 text-blue-500/80",
-        "bg-cyan-500/10 border-cyan-400/40 text-cyan-500/80",
-        "bg-indigo-500/15 border-indigo-400/40 text-indigo-500/80",
-      ][Math.floor(Math.random() * 3)],
-      symbol: MUSIC_SYMBOLS[Math.floor(Math.random() * MUSIC_SYMBOLS.length)],
+      size: Math.random() * 16 + 32, // Perfect bubble size: 32px to 48px
+      speedY: Math.random() * 0.28 + 0.12,
+      color: BUBBLE_STYLES[i % BUBBLE_STYLES.length],
+      symbol: MUSIC_SYMBOLS[i % MUSIC_SYMBOLS.length],
       popped: false,
     }));
     setParticles(initialParticles);
@@ -52,8 +54,8 @@ export default function Hero({ onLearnMore }: HeroProps) {
         prev.map((p) => {
           if (p.popped) return p;
           let nextY = p.y - p.speedY;
-          if (nextY < -5) {
-            nextY = 105; // Wrap around to bottom
+          if (nextY < -10) {
+            nextY = 110; // Wrap around to bottom
           }
           return { ...p, y: nextY };
         })
@@ -65,6 +67,13 @@ export default function Hero({ onLearnMore }: HeroProps) {
 
   // Pop interactive balloon
   const handlePop = (id: number) => {
+    const BUBBLE_STYLES = [
+      "bg-blue-500/10 border-blue-400/40 text-blue-500 hover:bg-blue-500/20 hover:border-blue-500",
+      "bg-cyan-500/10 border-cyan-400/40 text-cyan-500 hover:bg-cyan-500/20 hover:border-cyan-500",
+      "bg-indigo-500/15 border-indigo-400/40 text-indigo-500 hover:bg-indigo-500/20 hover:border-indigo-500",
+      "bg-emerald-500/10 border-emerald-400/40 text-emerald-500 hover:bg-emerald-500/20 hover:border-emerald-500",
+    ];
+
     setParticles((prev) =>
       prev.map((p) => (p.id === id ? { ...p, popped: true } : p))
     );
@@ -77,9 +86,10 @@ export default function Hero({ onLearnMore }: HeroProps) {
           p.id === id
             ? {
                 ...p,
-                y: 105,
+                y: 110,
                 popped: false,
                 x: Math.random() * 90 + 5,
+                color: BUBBLE_STYLES[Math.floor(Math.random() * BUBBLE_STYLES.length)],
                 symbol: MUSIC_SYMBOLS[Math.floor(Math.random() * MUSIC_SYMBOLS.length)],
               }
             : p
@@ -93,34 +103,6 @@ export default function Hero({ onLearnMore }: HeroProps) {
       id="hero-section"
       className="relative min-h-screen pt-32 pb-24 flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[#eef2f6]/40 via-white/60 to-[#f8fafc]/45 select-none"
     >
-      {/* Pop Bubble Game Elements inside Hero Section (keeps the hero interactive and dynamic!) */}
-      <div className="absolute inset-0 z-0 pointer-events-auto">
-        <div className="absolute top-6 right-6 px-3.5 py-2 bg-blue-600/10 border border-blue-200/50 rounded-full text-[10px] font-mono text-blue-700 backdrop-blur-xs flex items-center gap-1.5 shadow-3xs animate-bounce">
-          <Music className="w-3.5 h-3.5 animate-pulse text-blue-500" />
-          <span>FESTIVAL BEAT POP SCORE: {popScore}</span>
-        </div>
-
-        {/* Float bubble buttons */}
-        {particles.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => handlePop(p.id)}
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-            }}
-            className={`absolute rounded-full border transition-all duration-200 hover:scale-130 active:scale-90 cursor-pointer z-10 ${
-              p.popped ? "scale-0 opacity-0 bg-transparent border-transparent" : p.color
-            } flex items-center justify-center`}
-            title="Click to catch the beat!"
-          >
-            <span className="text-xs select-none filter drop-shadow-sm font-sans">{p.symbol}</span>
-          </button>
-        ))}
-      </div>
-
       {/* Elegant Radial Background Backlights */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-blue-400/25 to-cyan-300/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-400/10 to-indigo-400/20 rounded-full blur-3xl pointer-events-none" />
@@ -129,10 +111,10 @@ export default function Hero({ onLearnMore }: HeroProps) {
         {/* Intro Badge */}
         <div
           id="hero-intro-badge"
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-50 border border-blue-200/60 text-blue-700 rounded-full text-xs font-mono tracking-wider mb-6 animate-sparkle"
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-50 border border-emerald-200/60 text-emerald-700 rounded-full text-xs font-mono tracking-wider mb-6"
         >
-          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-          BLUE CONNECTIVE PORTFOLIO
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          OFFICIAL WORKSPACE PORTFOLIO
         </div>
 
         {/* Name Title */}
@@ -151,35 +133,7 @@ export default function Hero({ onLearnMore }: HeroProps) {
           {PROFILE.tagline}
         </p>
 
-        {/* Contacts row */}
-        <div id="hero-social-grid" className="flex flex-wrap justify-center gap-3 mb-10">
-          <a
-            id="link-mail"
-            href={`mailto:${PROFILE.email}`}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 hover:shadow-md text-xs font-semibold text-slate-800 rounded-xl transition-all shadow-3xs"
-          >
-            <Mail className="w-4 h-4 text-blue-500" />
-            {PROFILE.email}
-          </a>
-          <a
-            id="link-phone"
-            href={`tel:${PROFILE.phone}`}
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 hover:border-amber-500 hover:text-amber-600 hover:shadow-md text-xs font-semibold text-slate-800 rounded-xl transition-all shadow-3xs"
-          >
-            <Phone className="w-4 h-4 text-amber-500" />
-            {PROFILE.phone}
-          </a>
-          <a
-            id="link-instagram"
-            href={PROFILE.instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 hover:border-pink-500 hover:text-pink-600 hover:shadow-md text-xs font-semibold text-slate-800 rounded-xl transition-all shadow-3xs"
-          >
-            <Instagram className="w-4 h-4 text-pink-500" />
-            {PROFILE.instagram}
-          </a>
-        </div>
+
 
         {/* Interactive Stats Grid counter */}
         <div className="w-full max-w-2xl mb-12 bg-white/75 backdrop-blur-xs border border-slate-200/80 rounded-2xl p-4 shadow-3xs grid grid-cols-3 gap-2">
@@ -367,10 +321,7 @@ export default function Hero({ onLearnMore }: HeroProps) {
           </div>
         </div>
 
-        {/* Live Audio Sequencer & Festival Mixer Widget */}
-        <div className="w-full max-w-2xl mb-16 text-left">
-          <FestivalMixer />
-        </div>
+
 
         {/* Explore Button */}
         <button

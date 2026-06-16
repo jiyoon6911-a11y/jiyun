@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { Search, Trophy, Calendar, MapPin, X, ArrowUpRight, Compass, Flag, Sparkles, Shuffle, Star, Milestone, Music } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { Search, Trophy, Calendar, MapPin, X, ArrowUpRight, Compass, Flag, Sparkles, Shuffle, Star, Milestone, Music, ArrowUpDown } from "lucide-react";
 import { EXPERIENCES, AWARDS, Experience, Award as AwardType } from "../data";
 
 type PortfolioItem = (Experience | AwardType) & { itemType: "experience" | "award" };
@@ -10,6 +11,53 @@ export default function PortfolioGrid() {
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [animationClass, setAnimationClass] = useState("");
+  const [sortBy, setSortBy] = useState<"recommend" | "newest" | "oldest">("recommend");
+
+  // Auxiliary date parsing helper for robust sorting
+  const parseDateForSorting = (item: any): number => {
+    const dateStr = item.itemType === "award" ? item.date : item.period;
+    if (!dateStr) return 0;
+    
+    const yearMatch = dateStr.match(/(\d{4})\s*년/);
+    const monthMatch = dateStr.match(/(\d{1,2})\s*월/);
+    const dayMatch = dateStr.match(/(\d{1,2})\s*일/);
+    
+    const year = yearMatch ? parseInt(yearMatch[1], 10) : 1970;
+    const month = monthMatch ? parseInt(monthMatch[1], 10) : 1;
+    const day = dayMatch ? parseInt(dayMatch[1], 10) : 1;
+    
+    return year * 10000 + month * 100 + day;
+  };
+
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [tilt, setTilt] = useState<{ [key: string]: { x: number; y: number } }>({});
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const midX = rect.width / 2;
+    const midY = rect.height / 2;
+    
+    // Tilt angle (max 6 degrees)
+    const rotateX = -((y - midY) / midY) * 6;
+    const rotateY = ((x - midX) / midX) * 6;
+    
+    setTilt((prev) => ({
+      ...prev,
+      [id]: { x: rotateX, y: rotateY }
+    }));
+  };
+
+  const handleMouseLeave = (id: string) => {
+    setHoveredCard(null);
+    setTilt((prev) => ({
+      ...prev,
+      [id]: { x: 0, y: 0 }
+    }));
+  };
 
   // Combine items into a unified collection
   const allItems = useMemo(() => {
@@ -31,7 +79,7 @@ export default function PortfolioGrid() {
 
   // Filter based on selected tab, search query, and current active quickTag
   const filteredItems = useMemo(() => {
-    return allItems.filter((item) => {
+    const filtered = allItems.filter((item) => {
       // Tab filter
       if (activeTab !== "all" && item.itemType !== activeTab) {
         return false;
@@ -57,7 +105,15 @@ export default function PortfolioGrid() {
 
       return matchTitle || matchOrg || matchDesc;
     });
-  }, [allItems, activeTab, searchQuery, selectedTag]);
+
+    if (sortBy === "newest") {
+      return [...filtered].sort((a, b) => parseDateForSorting(b) - parseDateForSorting(a));
+    } else if (sortBy === "oldest") {
+      return [...filtered].sort((a, b) => parseDateForSorting(a) - parseDateForSorting(b));
+    }
+
+    return filtered;
+  }, [allItems, activeTab, searchQuery, selectedTag, sortBy]);
 
   // Fun generator trigger: randomly deal a card from the actual deck
   const handleRandomPick = () => {
@@ -84,11 +140,11 @@ export default function PortfolioGrid() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="max-w-xl">
-            <span className="text-xs font-mono tracking-widest text-blue-600 block mb-2 font-bold uppercase flex items-center gap-1.5 animate-pulse">
-              <Music className="w-3.5 h-3.5 text-blue-500" /> STAGE LINEUP & FESTIVAL TIMETABLE
+            <span className="text-xs font-mono tracking-widest text-emerald-600 block mb-2 font-bold uppercase flex items-center gap-1.5 animate-pulse">
+              <Music className="w-3.5 h-3.5 text-emerald-500" /> STAGE LINEUP & ACTIVITY TIMETABLE
             </span>
             <h2 id="portfolio-section-title" className="font-display font-bold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-              FESTIVAL SETLIST : 블루 타임라인
+              활동 셋리스트
             </h2>
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
               대학 생활 동안 주도해 온 페스티벌 기획 및 글로벌 펜타 드리머 대외활동, 동아리 리더십(CON:NECT), 
@@ -117,6 +173,23 @@ export default function PortfolioGrid() {
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
+            </div>
+
+            {/* Date Sorting Dropdown Selector */}
+            <div className="relative w-full sm:w-44">
+              <select
+                id="portfolio-sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="appearance-none w-full bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-2xl text-xs font-semibold focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all shadow-3xs text-slate-800 cursor-pointer"
+              >
+                <option value="recommend">추천 활동순</option>
+                <option value="newest">최신 날짜순 📅</option>
+                <option value="oldest">과거 날짜순 ⏳</option>
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              </div>
             </div>
 
             {/* Lucky Random Drawer Trigger! */}
@@ -213,40 +286,50 @@ export default function PortfolioGrid() {
           <div id="portfolio-cards-grid" className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${animationClass}`}>
             {filteredItems.map((item) => {
               const isAward = item.itemType === "award";
+              const isHovered = hoveredCard === item.id;
+              const cardTilt = tilt[item.id] || { x: 0, y: 0 };
+              
               return (
                 <div
                   key={item.id}
                   id={`item-card-${item.id}`}
                   onClick={() => setSelectedItem(item)}
-                  className="group bg-white border border-slate-200/90 hover:border-blue-500/80 hover:scale-[1.025] rounded-2xl p-6 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(37,99,235,0.24)] transition-all duration-300 relative overflow-hidden"
+                  onMouseEnter={() => setHoveredCard(item.id)}
+                  onMouseMove={(e) => handleMouseMove(e, item.id)}
+                  onMouseLeave={() => handleMouseLeave(item.id)}
+                  style={{
+                    transform: `perspective(1000px) rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) scale(${isHovered ? 1.025 : 1})`,
+                    transition: isHovered ? "none" : "transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1)",
+                  }}
+                  className="group bg-white border border-slate-200/90 hover:border-emerald-500/80 rounded-2xl p-6 cursor-pointer flex flex-col justify-between hover:shadow-[0_12px_28px_rgba(16,185,129,0.12)] transition-all duration-300 relative overflow-hidden"
                 >
-                  {/* Decorative faint glow on card corner hover */}
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-radial from-blue-500/5 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  {/* Gentle gradient light backdrop glow on card hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-emerald-50/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                   <div>
                     {/* Header: Category Badge and Icon */}
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4 relative z-10">
                       <span
                         id={`item-category-${item.id}`}
-                        className={`text-[10px] font-sans font-extrabold tracking-tight px-2.5 py-1 rounded-full uppercase ${
+                        className={`text-[10px] font-mono font-bold tracking-tight px-2.5 py-1 rounded-full uppercase ${
                           isAward
                             ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-blue-50 text-blue-700 border border-blue-100"
+                            : "bg-emerald-50 text-emerald-700 border border-emerald-100"
                         }`}
                       >
                         {item.categoryKo}
                       </span>
                       {isAward ? (
-                        <Trophy className="w-4 h-4 text-amber-500 group-hover:scale-120 group-hover:rotate-12 transition-transform" />
+                        <Trophy className="w-4 h-4 text-amber-500 group-hover:scale-115 group-hover:rotate-12 transition-transform" />
                       ) : (
-                        <Flag className="w-4 h-4 text-blue-500 group-hover:scale-120 transition-transform" />
+                        <Flag className="w-4 h-4 text-emerald-500 group-hover:scale-115 transition-transform" />
                       )}
                     </div>
 
                     {/* Title */}
                     <h3
                       id={`item-title-${item.id}`}
-                      className="font-display font-bold text-sm sm:text-base text-slate-900 tracking-tight mb-2.5 leading-snug group-hover:text-blue-600 transition-colors"
+                      className="font-display font-bold text-base text-slate-900 tracking-tight mb-2 leading-tight group-hover:text-emerald-600 transition-colors relative z-10"
                     >
                       {item.title}
                     </h3>
@@ -255,7 +338,7 @@ export default function PortfolioGrid() {
                     {item.description && (
                       <p
                         id={`item-desc-${item.id}`}
-                        className="text-xs text-slate-500 line-clamp-3 leading-relaxed mb-4"
+                        className="text-xs text-slate-500 line-clamp-3 leading-relaxed mb-4 relative z-10 font-normal"
                       >
                         {item.description}
                       </p>
@@ -263,19 +346,19 @@ export default function PortfolioGrid() {
                   </div>
 
                   {/* Metadata & Secondary Details */}
-                  <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between">
-                    <div className="flex flex-col gap-0.5 max-w-[80%]">
-                      <span className="text-[10px] font-mono tracking-tight text-slate-400 font-bold truncate flex items-center gap-1">
+                  <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between relative z-10">
+                    <div className="flex flex-col gap-0.5 max-w-[80%] font-mono">
+                      <span className="text-[10px] tracking-tight text-slate-400 font-bold truncate flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-slate-450 shrink-0" />
                         {item.organization}
                       </span>
-                      <span className="text-[10px] font-mono tracking-tight text-slate-500 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-blue-500 shrink-0" />
+                      <span className="text-[10px] tracking-tight text-slate-500 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-emerald-500 shrink-0" />
                         {isAward ? (item as AwardType).date : (item as Experience).period}
                       </span>
                     </div>
-                    <div className="p-1.5 bg-slate-50 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
+                    <div className="p-1.5 bg-slate-50 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-3xs">
+                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -284,16 +367,16 @@ export default function PortfolioGrid() {
           </div>
         )}
 
-        {/* Detail Inspection Modal Dialog with beautiful Blue Backdrop & Styling */}
-        {selectedItem && (
+        {/* Detail Inspection Modal Dialog with beautiful emerald Backdrop & Styling, rendered at document.body level using createPortal */}
+        {selectedItem && createPortal(
           <div
             id="detail-modal-overlay"
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[9999] animate-fade-in"
             onClick={() => setSelectedItem(null)}
           >
             <div
               id="detail-modal-board"
-              className="relative bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-500/10 animate-scale-up"
+              className="relative bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-emerald-500/10 animate-pop-out"
               onClick={(e) => e.stopPropagation()} // Prevent close on card click
             >
               {/* Close Button */}
@@ -310,11 +393,11 @@ export default function PortfolioGrid() {
                 <span className={`text-[9px] font-mono font-black tracking-wider px-2.5 py-1 rounded-full uppercase ${
                   selectedItem.itemType === "award"
                     ? "bg-amber-100 text-amber-800"
-                    : "bg-blue-600 text-white"
+                    : "bg-emerald-600 text-white"
                 }`}>
                   {selectedItem.itemType === "award" ? "수상 (AWARD)" : "활동 (EXPERIENCE)"}
                 </span>
-                <span className="text-xs text-blue-600 font-extrabold">{selectedItem.categoryKo}</span>
+                <span className="text-xs text-emerald-600 font-extrabold">{selectedItem.categoryKo}</span>
               </div>
 
               {/* Title */}
@@ -323,18 +406,18 @@ export default function PortfolioGrid() {
               </h2>
 
               {/* Metadata strip */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-tr from-slate-50 to-blue-50/40 rounded-2xl border border-slate-200/50 mb-6 font-mono text-xs text-slate-600">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-tr from-slate-50 to-emerald-50/40 rounded-2xl border border-slate-200/50 mb-6 font-mono text-xs text-slate-600">
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">진행 및 발급 기관</span>
                   <div className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                    <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     {selectedItem.organization}
                   </div>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">일정 / 기간</span>
                   <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                    <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     {selectedItem.itemType === "award"
                       ? (selectedItem as AwardType).date
                       : (selectedItem as Experience).period}
@@ -346,7 +429,7 @@ export default function PortfolioGrid() {
               <div className="mb-2 space-y-4">
                 {selectedItem.description ? (
                   <div>
-                    <span className="text-[10px] font-mono text-blue-500 font-bold block uppercase mb-2">상세 정보 요약 기록</span>
+                    <span className="text-[10px] font-mono text-emerald-600 font-bold block uppercase mb-2">상세 정보 요약 기록</span>
                     <p className="text-sm text-slate-800 leading-relaxed font-normal whitespace-pre-wrap bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                       {selectedItem.description}
                     </p>
@@ -356,7 +439,8 @@ export default function PortfolioGrid() {
                 )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </section>

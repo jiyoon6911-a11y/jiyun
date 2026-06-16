@@ -1,144 +1,256 @@
-import { useState } from "react";
-import { Mail, Phone, Instagram, Youtube, BookOpen, MapPin, Send, Sparkles, AlertCircle } from "lucide-react";
-import { PROFILE } from "../data";
+import React, { useEffect, useState, useRef } from "react";
+import { Terminal, Send, Sparkles, AlertCircle, User, MessageSquare, Clock } from "lucide-react";
+import { collection, query, orderBy, limit, addDoc, onSnapshot } from "firebase/firestore";
+import { db, handleFirestoreError, OperationType } from "../firebase";
+
+interface GuestbookMessage {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
 
 export default function Footer() {
-  const [customMsg, setCustomMsg] = useState("");
-  const [sentStatus, setSentStatus] = useState<string | null>(null);
+  const [messages, setMessages] = useState<GuestbookMessage[]>([]);
+  const [authorName, setAuthorName] = useState("");
+  const [messageText, setMessageText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
-  const presetMessages = [
-    "💙 지윤님의 에듀테크 해커톤 가뭄 극복 서비스 수상이 인상 깊습니다!",
-    "🎓 주전공 디지털인문예술 x 디지털미디어콘텐츠 복합 설계 역량에 큰 감명을 받았습니다.",
-    "🚀 영상 기획 및 공모전 28선에 대한 대외 협업 제안하고 싶습니다!",
-  ];
+  const logEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = (text: string) => {
-    if (!text.trim()) return;
-    setSentStatus("sending");
-    
-    setTimeout(() => {
-      setSentStatus("success");
-      setCustomMsg("");
+  // Subscribe to Firestore live messages on component mount
+  useEffect(() => {
+    let unsubscribe = () => {};
+    try {
+      const q = query(
+        collection(db, "guestbook"),
+        orderBy("createdAt", "asc"),
+        limit(80)
+      );
       
-      // Hide status after 3 seconds
-      setTimeout(() => {
-        setSentStatus(null);
-      }, 5000);
-    }, 800);
+      unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const loaded: GuestbookMessage[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            loaded.push({
+              id: doc.id,
+              author: data.author || "익명",
+              text: data.text || "",
+              createdAt: data.createdAt || new Date().toISOString(),
+            });
+          });
+          setMessages(loaded);
+          setLoading(false);
+          
+          // Smoother scrolling to bottom
+          setTimeout(() => {
+            logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+        },
+        (err) => {
+          setErrorStatus("방명록 로딩 중 오류가 발생했습니다.");
+          handleFirestoreError(err, OperationType.LIST, "guestbook");
+        }
+      );
+    } catch (err) {
+      setErrorStatus("Firebase 실시간 연결에 실패했습니다.");
+      setLoading(false);
+    }
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalAuthor = authorName.trim() || "익명의 관객";
+    const finalTxt = messageText.trim();
+    if (!finalTxt) return;
+
+    setIsSending(true);
+    setErrorStatus(null);
+
+    const payload = {
+      author: finalAuthor.substring(0, 80),
+      text: finalTxt.substring(0, 450),
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await addDoc(collection(db, "guestbook"), payload);
+      setMessageText("");
+      // Reset input state but keep author name for easier repeated chats
+    } catch (err) {
+      setErrorStatus("메시지 저장 중 오류가 발생했습니다. (보안 규칙 위반 또는 네트워크 지연)");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const formatTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      });
+    } catch {
+      return "00:00:00";
+    }
   };
 
   return (
     <footer
       id="contact-section"
-      className="bg-slate-950 text-slate-205 pt-20 pb-12 border-t border-blue-900/40 relative overflow-hidden text-slate-200"
+      className="bg-slate-950 text-slate-200 pt-16 pb-12 border-t border-blue-900/40 relative overflow-hidden"
     >
-      {/* Decorative abstract cosmic/blue light vector in footer background */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Decorative ambient radial lighting in the footer background */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="max-w-5xl mx-auto px-6 relative z-10">
         
-        {/* Upper Grid: Contact badge + Interactive Suggestion Box */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div>
-            <span className="text-xs font-mono tracking-widest text-blue-400 uppercase font-extrabold block mb-1">
-              CONTACT & NETWORKING
-            </span>
-            <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight leading-snug">
-              연락처 및 소셜 미디어 채널
-            </h3>
-            <p className="text-xs text-slate-400 mt-2 max-w-md leading-relaxed">
-              대학 및 기반을 넘나들며 적극적인 인스퍼레이션을 나누고자 합니다. 
-              궁금한 사항이 있으시다면 언제든 아래의 채널로 편하게 기여 제안을 부탁드립니다.
-            </p>
-
-            {/* Social Links List */}
-            <div className="flex flex-wrap gap-3 mt-6">
-              <a
-                id="footer-insta-link"
-                href={PROFILE.instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs bg-white/5 border border-white/10 hover:border-pink-500 hover:bg-pink-500/10 px-4 py-2.5 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer font-semibold shadow-3xs"
-              >
-                <Instagram className="w-4 h-4 text-pink-400" />
-                <span>Instagram (@jithemax.404)</span>
-              </a>
-              <div
-                id="footer-youtube-link"
-                className="flex items-center gap-2 text-xs bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-slate-300 font-semibold"
-              >
-                <Youtube className="w-4 h-4 text-red-500" />
-                <span>YouTube ({PROFILE.youtube})</span>
-              </div>
-              <div
-                id="footer-blog-link"
-                className="flex items-center gap-2 text-xs bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-slate-300 font-semibold"
-              >
-                <BookOpen className="w-4 h-4 text-emerald-400" />
-                <span>Blog ({PROFILE.blog})</span>
-              </div>
-            </div>
+        {/* Upper Header: System Status & Live Logs Introduction */}
+        <div className="mb-8 text-center sm:text-left">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 rounded-full text-[10px] font-mono mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+            LIVE GUESTBOOK SERVER: ONLINE
           </div>
-
-          {/* Fully Interactive Message Simulator Engine (재밌는 요소!) */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl backdrop-blur-xs">
-            <span className="text-[10px] font-mono tracking-wider font-extrabold text-blue-400 uppercase block mb-1">
-              INTERACTIVE GREETING SIMULATOR
-            </span>
-            <h4 className="font-display font-bold text-sm text-white mb-2 tracking-tight">
-              가상 전송 방명록 시뮬레이터 💬
-            </h4>
-            
-            {/* Quick Text suggestion list */}
-            <div className="space-y-1.5 mb-4">
-              {presetMessages.map((pText, pi) => (
-                <button
-                  key={pi}
-                  onClick={() => setCustomMsg(pText)}
-                  className="w-full text-left text-[11px] bg-slate-950/40 hover:bg-slate-950 hover:text-blue-300 px-3 py-1.5 rounded-lg border border-slate-800 text-slate-400 transition-all font-medium truncate"
-                >
-                  {pText}
-                </button>
-              ))}
-            </div>
-
-            {/* Form Input row */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="지윤님에게 가상 메시지를 작성하세요..."
-                value={customMsg}
-                onChange={(e) => setCustomMsg(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500 pr-12 transition-all"
-              />
-              <button
-                onClick={() => handleSendMessage(customMsg)}
-                disabled={!customMsg.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 disabled:bg-slate-800 text-white rounded-lg transition-colors cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Notification system */}
-            {sentStatus === "sending" && (
-              <p className="text-[11px] text-blue-400 mt-2 animate-pulse font-mono">가상 전송 위젯 처리 중...</p>
-            )}
-            {sentStatus === "success" && (
-              <div className="mt-3 p-3 bg-blue-900/40 border border-blue-500/20 text-blue-200 rounded-xl text-[11px] leading-relaxed flex items-start gap-2 animate-fade-in shadow-inner">
-                <Sparkles className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5 animate-spin" />
-                <div>
-                  <span className="font-extrabold block mb-0.5">시뮬레이터 전송 테스트 성공! 🎉</span>
-                  방명록이 정상적으로 시뮬레이트되었습니다. 실제 홍지윤 기획자님께 정식 협업 메일을 제안하고 싶으시다면, 아래 공식 이메일 링크를 확인하세요!
-                </div>
-              </div>
-            )}
-          </div>
+          <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight leading-snug">
+            실시간 라이브 방명록 시스템 💬
+          </h3>
+          <p className="text-xs text-slate-400 mt-2 max-w-xl leading-relaxed">
+            페스티벌 콘서트와 밴드 음악을 아끼는 분들과의 공유를 위해 구축한 <strong>진짜 방명록 시스템</strong>입니다. 
+            남겨주신 소중한 피드백과 기록은 <strong>Firebase Firestore 실시간 데이터베이스</strong>에 저장되어 언제든 계속해서 확인하실 수 있습니다.
+          </p>
         </div>
 
-        {/* Bottom Credits row */}
-        <div className="mt-16 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-mono text-slate-600">
+        {/* Grand Terminal / System Console Board */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Column 1 & 2: Real-time scrolling terminal output panel */}
+          <div className="lg:col-span-2 flex flex-col bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl h-[380px] hover:border-blue-500/40 transition-colors">
+            {/* Terminal Tab Header bar */}
+            <div className="bg-slate-950/80 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400 select-none">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-3.5 h-3.5 text-blue-500" />
+                <span>guestbook_stream.log</span>
+              </div>
+              <div className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/45" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/45" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/45" />
+              </div>
+            </div>
+
+            {/* Terminal Body Screen Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs text-slate-300">
+              {loading ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-2 font-mono">
+                  <div className="w-5 h-5 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+                  <span>INITIALIZING DATABASE CONNECTION...</span>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center p-6 gap-2">
+                  <MessageSquare className="w-8 h-8 text-slate-700 mb-1" />
+                  <span className="text-slate-400 font-bold">[!] NO RECORDS IN LOG</span>
+                  <span className="text-[11px] text-slate-500">첫 번째 라이브 방명록 메시지를 기록해주세요.</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className="p-3 bg-slate-950/70 border border-slate-850/60 rounded-xl hover:border-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1 text-[10px] text-slate-500">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <User className="w-3 h-3 text-blue-400/80" />
+                          <span className="text-blue-300">{msg.author}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-slate-500">
+                          <Clock className="w-3 h-3 text-slate-600" />
+                          <span>{formatTime(msg.createdAt)}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-200 leading-relaxed font-sans whitespace-pre-wrap break-all pl-4 border-l-2 border-blue-500/40">
+                        {msg.text}
+                      </p>
+                    </div>
+                  ))}
+                  <div ref={logEndRef} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Live Input Panel */}
+          <div className="flex flex-col justify-between bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-2xl h-[380px]">
+            <div>
+              <span className="text-[9px] font-mono tracking-widest font-extrabold text-blue-400 uppercase block mb-1">
+                SYSTEM REGISTER TERMINAL
+              </span>
+              <h4 className="font-display font-bold text-sm text-white tracking-tight mb-3 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" /> 방명록 등록하기
+              </h4>
+
+              <div className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
+                홍지윤 기획자에게 따뜻한 응원의 한마디나 관람 소감을 실시간으로 등록해 보세요!
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSendMessage} className="space-y-2">
+              <div className="flex flex-col gap-2">
+                <div className="relative">
+                  <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="작성자 이름 / 닉네임"
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-600 outline-none focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder="올릴 내용을 입력하세요..."
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 outline-none focus:border-blue-500 pr-10 transition-all"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!messageText.trim() || isSending}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-850 disabled:hover:bg-slate-850 text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center shrink-0 w-7 h-7"
+                    title="기록 추가"
+                  >
+                    <Send className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {errorStatus && (
+                <div className="text-[9px] text-red-400 bg-red-950/20 border border-red-900/30 p-2 rounded-lg flex items-start gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                  <span>{errorStatus}</span>
+                </div>
+              )}
+            </form>
+          </div>
+
+        </div>
+
+        {/* Bottom Credits row (Removed any Mail, Phone or Instagram links completely) */}
+        <div className="mt-16 pt-8 border-t border-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] font-mono text-slate-600">
           <span>© 2026 HONG JIYOON. ALL RIGHTS RESERVED.</span>
           <span className="font-bold text-blue-500">CULTURAL PLANNER BLUE NEXUS PORTFOLIO</span>
         </div>

@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "GuestbookMessage": {
+      "title": "Guestbook Message",
+      "description": "A real guestbook message left by a visitor.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The message body written by the guest."
+        },
+        "author": {
+          "type": "string",
+          "description": "The name of the guest."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the message was sent."
+        }
+      },
+      "required": ["text", "author", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/guestbook/{messageId}": {
+      "schema": "GuestbookMessage",
+      "description": "Collection of all guestbook messages."
+    }
+  }
+}
