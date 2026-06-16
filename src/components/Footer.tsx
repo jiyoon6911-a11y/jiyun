@@ -39,7 +39,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Upper Grid: Contact badge + Interactive Suggestion Box */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pb-16 border-b border-slate-800">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div>
             <span className="text-xs font-mono tracking-widest text-blue-400 uppercase font-extrabold block mb-1">
               CONTACT & NETWORKING
@@ -134,41 +134,6 @@ export default function Footer() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Detailed Contacts Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 pt-12 text-slate-400">
-          <div className="group">
-            <span className="text-[10px] uppercase font-bold text-slate-600 block mb-2 font-mono">공식 비즈니스 회신</span>
-            <a
-              id="footer-email-link"
-              href={`mailto:${PROFILE.email}`}
-              className="font-display font-bold text-sm text-slate-300 hover:text-blue-400 transition-colors flex items-center gap-2 group-hover:scale-101 duration-200"
-            >
-              <Mail className="w-4 h-4 shrink-0 text-blue-500" />
-              {PROFILE.email}
-            </a>
-          </div>
-
-          <div className="group">
-            <span className="text-[10px] uppercase font-bold text-slate-600 block mb-2 font-mono">전화 회선</span>
-            <a
-              id="footer-phone-link"
-              href={`tel:${PROFILE.phone}`}
-              className="font-display font-bold text-sm text-slate-300 hover:text-amber-500 transition-colors flex items-center gap-2 group-hover:scale-101 duration-200"
-            >
-              <Phone className="w-4 h-4 shrink-0 text-amber-500" />
-              {PROFILE.phone}
-            </a>
-          </div>
-
-          <div>
-            <span className="text-[10px] uppercase font-bold text-slate-600 block mb-2 font-mono">캠퍼스 소속 소망</span>
-            <div className="font-display font-bold text-sm text-white flex items-center gap-2">
-              <MapPin className="w-4 h-4 shrink-0 text-indigo-400" />
-              {PROFILE.education.university} ({PROFILE.education.graduationState})
-            </div>
           </div>
         </div>
 

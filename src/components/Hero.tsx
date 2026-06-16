@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ArrowDown, Mail, Phone, Instagram, BookOpen, Star, Sparkles, Sliders, CheckCircle2 } from "lucide-react";
+import { ArrowDown, Mail, Phone, Instagram, BookOpen, Sparkles, Sliders, CheckCircle2, Ticket, Music } from "lucide-react";
 import { PROFILE, EXPERIENCES, AWARDS } from "../data";
+import FestivalMixer from "./FestivalMixer";
 
 interface HeroProps {
   onLearnMore: () => void;
@@ -13,21 +14,8 @@ interface Particle {
   size: number;
   speedY: number;
   color: string;
+  symbol: string;
   popped: boolean;
-}
-
-interface FollowerBubble {
-  size: number;
-  delay: string;
-  color: string;
-  offsetX: number;
-  offsetY: number;
-}
-
-interface DynamicRipple {
-  id: number;
-  x: number;
-  y: number;
 }
 
 export default function Hero({ onLearnMore }: HeroProps) {
@@ -35,15 +23,10 @@ export default function Hero({ onLearnMore }: HeroProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [popScore, setPopScore] = useState(0);
 
-  // Mouse trajectory following coordinates
-  const [mousePos, setMousePos] = useState({ x: -200, y: -200 });
-  const [isMouseActive, setIsMouseActive] = useState(false);
-
-  // Concentric click ripples list
-  const [clickRipples, setClickRipples] = useState<DynamicRipple[]>([]);
-
   // Stats Breakdown Clicker State
   const [selectedStatFilter, setSelectedStatFilter] = useState<"all" | "exp" | "award">("all");
+
+  const MUSIC_SYMBOLS = ["🎵", "🎸", "🥁", "⚡", "♬", "🎙️", "🎹", "✨"];
 
   // Generate background active bubbles on startup
   useEffect(() => {
@@ -51,13 +34,14 @@ export default function Hero({ onLearnMore }: HeroProps) {
       id: i,
       x: Math.random() * 90 + 5, // percentage
       y: Math.random() * 80 + 10,
-      size: Math.random() * 25 + 15,
+      size: Math.random() * 20 + 24, // 24px to 44px
       speedY: Math.random() * 0.35 + 0.15,
       color: [
-        "bg-blue-500/10 border-blue-400/40",
-        "bg-cyan-500/10 border-cyan-400/40",
-        "bg-indigo-500/15 border-indigo-400/40",
+        "bg-blue-500/10 border-blue-400/40 text-blue-500/80",
+        "bg-cyan-500/10 border-cyan-400/40 text-cyan-500/80",
+        "bg-indigo-500/15 border-indigo-400/40 text-indigo-500/80",
       ][Math.floor(Math.random() * 3)],
+      symbol: MUSIC_SYMBOLS[Math.floor(Math.random() * MUSIC_SYMBOLS.length)],
       popped: false,
     }));
     setParticles(initialParticles);
@@ -96,6 +80,7 @@ export default function Hero({ onLearnMore }: HeroProps) {
                 y: 105,
                 popped: false,
                 x: Math.random() * 90 + 5,
+                symbol: MUSIC_SYMBOLS[Math.floor(Math.random() * MUSIC_SYMBOLS.length)],
               }
             : p
         )
@@ -103,97 +88,16 @@ export default function Hero({ onLearnMore }: HeroProps) {
     }, 2000);
   };
 
-  // Mouse trajectory listener
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setMousePos({ x, y });
-    setIsMouseActive(true);
-  };
-
-  // Turn off follower circles when cursor exits Hero area
-  const handleMouseLeave = () => {
-    setIsMouseActive(false);
-  };
-
-  // Spawn concentric ripples upon clicking space
-  const handleHeroClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    // Prevent interfering with actual buttons, links, or pop tabs
-    if (target.closest("button") || target.closest("a")) {
-      return;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newRipple = { id: Date.now() + Math.random(), x, y };
-    setClickRipples((prev) => [...prev, newRipple]);
-
-    // Cleanup ripple after animation finishes (0.9s duration)
-    setTimeout(() => {
-      setClickRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
-    }, 900);
-  };
-
-  // Custom lagging configurations for fluid physics-like visual feedback
-  const followerBubbles: FollowerBubble[] = [
-    { size: 90, delay: "duration-150", color: "from-blue-400/20 to-cyan-300/10", offsetX: -45, offsetY: -45 },
-    { size: 140, delay: "duration-300", color: "from-indigo-400/10 to-blue-500/10", offsetX: -70, offsetY: -70 },
-    { size: 60, delay: "duration-200", color: "from-blue-500/25 to-sky-400/20", offsetX: -30, offsetY: -30 },
-    { size: 110, delay: "duration-500", color: "from-cyan-400/15 to-indigo-500/15", offsetX: -55, offsetY: -55 },
-    { size: 45, delay: "duration-100", color: "from-sky-300/30 to-blue-400/20", offsetX: -22, offsetY: -22 },
-    { size: 185, delay: "duration-700", color: "from-blue-600/5 to-cyan-500/5", offsetX: -92, offsetY: -92 },
-  ];
-
   return (
     <section
       id="hero-section"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleHeroClick}
-      className="relative min-h-screen pt-32 pb-24 flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[#eef2f6] via-white to-[#f8fafc] cursor-crosshair select-none"
+      className="relative min-h-screen pt-32 pb-24 flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[#eef2f6]/40 via-white/60 to-[#f8fafc]/45 select-none"
     >
-      {/* 1. Mouse-following translucent blue bubbles (Trailing Physics effect) */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {isMouseActive &&
-          followerBubbles.map((bubble, i) => (
-            <div
-              key={i}
-              style={{
-                transform: `translate3d(${mousePos.x + bubble.offsetX}px, ${mousePos.y + bubble.offsetY}px, 0)`,
-                width: `${bubble.size}px`,
-                height: `${bubble.size}px`,
-              }}
-              className={`absolute rounded-full bg-gradient-to-tr ${bubble.color} backdrop-blur-3xs border border-blue-400/20 transition-transform ${bubble.delay} ease-out pointer-events-none`}
-            />
-          ))}
-      </div>
-
-      {/* 2. Dynamic Concentric Click Blue Ring Ripples */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {clickRipples.map((ripple) => (
-          <div
-            key={ripple.id}
-            style={{
-              left: `${ripple.x}px`,
-              top: `${ripple.y}px`,
-            }}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-          >
-            <div className="absolute w-24 h-24 -left-12 -top-12 rounded-full border-2 border-blue-500/50 animate-[ping_0.9s_ease-out_forwards]" />
-            <div className="absolute w-14 h-14 -left-7 -top-7 rounded-full border border-cyan-400/60 animate-[ping_0.7s_ease-out_0.1s_forwards]" />
-            <div className="absolute w-6 h-6 -left-3 -top-3 rounded-full bg-blue-500/10 animate-[ping_0.5s_ease-out_0.2s_forwards]" />
-          </div>
-        ))}
-      </div>
-
-      {/* 3. Pop Bubble Game Score Bar */}
+      {/* Pop Bubble Game Elements inside Hero Section (keeps the hero interactive and dynamic!) */}
       <div className="absolute inset-0 z-0 pointer-events-auto">
         <div className="absolute top-6 right-6 px-3.5 py-2 bg-blue-600/10 border border-blue-200/50 rounded-full text-[10px] font-mono text-blue-700 backdrop-blur-xs flex items-center gap-1.5 shadow-3xs animate-bounce">
-          <Sparkles className="w-3.5 h-3.5 animate-spin text-blue-500" />
-          <span>BLUE BUBBLE POP SCORE: {popScore}</span>
+          <Music className="w-3.5 h-3.5 animate-pulse text-blue-500" />
+          <span>FESTIVAL BEAT POP SCORE: {popScore}</span>
         </div>
 
         {/* Float bubble buttons */}
@@ -210,9 +114,9 @@ export default function Hero({ onLearnMore }: HeroProps) {
             className={`absolute rounded-full border transition-all duration-200 hover:scale-130 active:scale-90 cursor-pointer z-10 ${
               p.popped ? "scale-0 opacity-0 bg-transparent border-transparent" : p.color
             } flex items-center justify-center`}
-            title="Click to pop!"
+            title="Click to catch the beat!"
           >
-            <span className="w-1.5 h-1.5 bg-blue-400/40 rounded-full animate-ping" />
+            <span className="text-xs select-none filter drop-shadow-sm font-sans">{p.symbol}</span>
           </button>
         ))}
       </div>
@@ -277,7 +181,7 @@ export default function Hero({ onLearnMore }: HeroProps) {
           </a>
         </div>
 
-        {/* Interactive Interactive Stats Grid counter */}
+        {/* Interactive Stats Grid counter */}
         <div className="w-full max-w-2xl mb-12 bg-white/75 backdrop-blur-xs border border-slate-200/80 rounded-2xl p-4 shadow-3xs grid grid-cols-3 gap-2">
           <button
             onClick={() => setSelectedStatFilter("all")}
@@ -380,34 +284,51 @@ export default function Hero({ onLearnMore }: HeroProps) {
           )}
         </div>
 
-        {/* Academic Details Card */}
+        {/* Academic Details - Re-themed as a Festival CREW VIP PASS Ticket */}
         <div
           id="profile-section"
-          className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 text-left shadow-sm mb-16 relative overflow-hidden group hover:border-blue-400/60 hover:shadow-md transition-all duration-300"
+          className="w-full max-w-2xl bg-white border border-slate-250/80 rounded-3xl p-6 sm:p-8 text-left shadow-sm mb-8 relative overflow-hidden group hover:border-blue-500/60 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
         >
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600" />
-          <div className="flex items-start gap-4 flex-col sm:flex-row">
-            <div className="bg-blue-50 text-blue-600 p-3 rounded-2xl shrink-0 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-6 h-6 border-transparent" />
-            </div>
-            <div className="flex-1 w-full">
-              <h3 id="edu-title" className="font-display font-bold text-xs text-blue-600 mb-2 uppercase tracking-wider flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> EDUCATION (학력)
+          {/* Ticket Edge Circle Cutouts */}
+          <div className="absolute -left-3 top-1/2 -mt-3 w-6 h-6 rounded-full bg-[#f8fafc] border-r border-slate-200/90 z-10" />
+          <div className="absolute -right-3 top-1/2 -mt-3 w-6 h-6 rounded-full bg-[#f8fafc] border-l border-slate-200/90 z-10" />
+
+          {/* Ticket Header Line */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600" />
+          
+          <div className="flex flex-col md:flex-row gap-6 justify-between relative">
+            {/* Main Ticket Content */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Ticket className="w-5 h-5 text-blue-600 shrink-0 animate-pulse" />
+                <span className="text-[10px] font-mono font-extrabold tracking-widest text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md">
+                  FESTIVAL CREW VIP PASS
+                </span>
+                <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                  SERIAL: HJY-2026-NEXUS
+                </span>
+              </div>
+
+              <h3 id="edu-title" className="font-display font-black text-2xl text-slate-900 tracking-tight mb-2 uppercase">
+                {PROFILE.education.university}
               </h3>
-              <p className="text-sm font-semibold text-slate-750 mb-4 flex flex-wrap items-center gap-2">
-                <span className="text-base text-slate-900 font-bold">{PROFILE.education.university}</span>
-                <span className="text-xs font-mono bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-full text-blue-600 font-bold">
+
+              <div className="flex items-center gap-1.5 mb-5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-xs font-mono font-bold text-slate-600">
                   {PROFILE.education.graduationState}
                 </span>
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              </div>
+
+              {/* Majors */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 {PROFILE.education.majors.map((major, index) => (
                   <div
                     key={index}
                     id={`major-item-${index}`}
-                    className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-blue-50/20 hover:border-blue-200/50 transition-all shadow-3xs"
+                    className="p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-blue-50/20 hover:border-blue-200/50 transition-all"
                   >
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block mb-0.5 font-bold">
+                    <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400 block mb-0.5 font-bold">
                       {major.type}
                     </span>
                     <span className="text-xs font-bold text-slate-800 leading-tight block">
@@ -417,7 +338,38 @@ export default function Hero({ onLearnMore }: HeroProps) {
                 ))}
               </div>
             </div>
+
+            {/* Vertical Tear-off Ticket Stub / Barcode representation */}
+            <div className="md:w-32 border-t md:border-t-0 md:border-l border-dashed border-slate-200 pt-5 md:pt-0 md:pl-6 flex flex-col justify-between items-center md:items-start shrink-0">
+              <div className="text-center md:text-left">
+                <span className="text-[9px] font-mono font-bold text-slate-400 uppercase block">STAGE ACCESS</span>
+                <span className="text-xs font-mono font-black text-blue-600 tracking-wider">ALL AREA PASS</span>
+              </div>
+
+              {/* Barcode representation */}
+              <div className="my-4 flex flex-col items-center md:items-start gap-1">
+                <div className="flex gap-[2px] h-9 items-end opacity-85">
+                  <div className="w-[3px] h-full bg-slate-900" />
+                  <div className="w-[1px] h-4/5 bg-slate-900" />
+                  <div className="w-[4px] h-full bg-slate-900" />
+                  <div className="w-[2px] h-5/6 bg-slate-900" />
+                  <div className="w-[1px] h-full bg-slate-900" />
+                  <div className="w-[3px] h-2/3 bg-slate-900" />
+                  <div className="w-[1px] h-full bg-slate-900" />
+                  <div className="w-[4px] h-4/5 bg-slate-900" />
+                  <div className="w-[2px] h-full bg-slate-900" />
+                  <div className="w-[1px] h-5/6 bg-slate-900" />
+                  <div className="w-[3px] h-full bg-slate-900" />
+                </div>
+                <span className="text-[8px] font-mono tracking-widest text-slate-400">CONNECT-950724</span>
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Live Audio Sequencer & Festival Mixer Widget */}
+        <div className="w-full max-w-2xl mb-16 text-left">
+          <FestivalMixer />
         </div>
 
         {/* Explore Button */}

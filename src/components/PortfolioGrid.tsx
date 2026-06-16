@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Trophy, Calendar, MapPin, X, ArrowUpRight, Compass, Flag, Sparkles, Shuffle, Star, Milestone } from "lucide-react";
+import { Search, Trophy, Calendar, MapPin, X, ArrowUpRight, Compass, Flag, Sparkles, Shuffle, Star, Milestone, Music } from "lucide-react";
 import { EXPERIENCES, AWARDS, Experience, Award as AwardType } from "../data";
 
 type PortfolioItem = (Experience | AwardType) & { itemType: "experience" | "award" };
@@ -75,7 +75,7 @@ export default function PortfolioGrid() {
   return (
     <section
       id="portfolio-section"
-      className="py-24 bg-[#f1f5f9]/50 border-t border-blue-50 relative"
+      className="py-24 bg-[#f1f5f9]/30 backdrop-blur-3xs border-t border-blue-50/50 relative"
     >
       {/* Decorative Blueprint Lines Grid */}
       <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
@@ -84,15 +84,15 @@ export default function PortfolioGrid() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="max-w-xl">
-            <span className="text-xs font-mono tracking-widest text-blue-600 block mb-2 font-bold uppercase">
-              EXPERIENCES & AWARDS PORTFOLIO
+            <span className="text-xs font-mono tracking-widest text-blue-600 block mb-2 font-bold uppercase flex items-center gap-1.5 animate-pulse">
+              <Music className="w-3.5 h-3.5 text-blue-500" /> STAGE LINEUP & FESTIVAL TIMETABLE
             </span>
             <h2 id="portfolio-section-title" className="font-display font-bold text-3xl sm:text-4xl text-slate-900 tracking-tight">
-              도전과 성취의 블루 타임라인
+              FESTIVAL SETLIST : 블루 타임라인
             </h2>
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-              대학 생활 동안 주도해 온 교육 행사 기획, 동아리 메디에이터 역량, 산학연 일체형 실습, 
-              우수 수상작 등 <strong>홍지윤의 28개 통합 누적 오리지널 데이터베이스</strong>입니다.
+              대학 생활 동안 주도해 온 페스티벌 기획 및 글로벌 펜타 드리머 대외활동, 동아리 리더십(CON:NECT), 
+              산학 협력 실무(안녕하는사이), 최우수 학술제 등 <strong>홍지윤의 통합 누적 오리지널 스테이지 데이터베이스</strong>입니다.
             </p>
           </div>
 
@@ -218,7 +218,7 @@ export default function PortfolioGrid() {
                   key={item.id}
                   id={`item-card-${item.id}`}
                   onClick={() => setSelectedItem(item)}
-                  className="group bg-white border border-slate-200/90 hover:border-blue-500 rounded-2xl p-6 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 relative overflow-hidden"
+                  className="group bg-white border border-slate-200/90 hover:border-blue-500/80 hover:scale-[1.025] rounded-2xl p-6 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(37,99,235,0.24)] transition-all duration-300 relative overflow-hidden"
                 >
                   {/* Decorative faint glow on card corner hover */}
                   <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-radial from-blue-500/5 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
